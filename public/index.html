@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoFork導入効果 プレゼンテーション | 株式会社ハクオウロボティクス</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+        .presentation-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+        }
+        .slide {
+            flex: 0 0 100vw;
+            width: 100vw;
+            height: 100vh;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4vw;
+            position: relative;
+        }
+        .slide-content {
+            width: 100%;
+            max-width: 1200px;
+            margin: auto;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #ff6361, #bc5090);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .slide-number {
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            font-size: 1rem;
+            color: #9ca3af;
+        }
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #bc5090;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="presentation-container">
+
+        <!-- Slide 1: Title -->
+        <section class="slide bg-white">
+            <div class="slide-content text-center">
+                <p class="text-2xl md:text-3xl text-gray-500">株式会社ハクオウロボティクス</p>
+                <h1 class="text-5xl md:text-8xl font-black text-gray-800 mt-8 leading-tight">
+                    貴社の倉庫、<br>
+                    <span class="gradient-text">本当のコスト</span>を<br>
+                    知っていますか？
+                </h1>
+                <p class="mt-10 text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto">
+                    「人に依存し過ぎる」という経営リスクから解放するための、新しいご提案です。
+                </p>
+            </div>
+            <div class="slide-number">1 / 6</div>
+        </section>
+
+        <!-- Slide 2: The True Problem -->
+        <section class="slide bg-gray-50">
+            <div class="slide-content">
+                <h2 class="text-5xl font-black text-center mb-10">本当の課題：「人への過剰依存」</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                    <div class="bg-white rounded-2xl shadow-xl p-8 h-full">
+                        <div class="text-center p-6 border-b-4 border-dashed border-sky-200">
+                            <h3 class="text-2xl font-bold text-sky-600">見えている課題</h3>
+                            <div class="grid grid-cols-3 gap-4 mt-6 text-center">
+                                <div><div class="text-5xl md:text-6xl">👤</div><p class="mt-2 text-lg font-bold">人手不足</p></div>
+                                <div><div class="text-5xl md:text-6xl">🚚</div><p class="mt-2 text-lg font-bold">物流問題</p></div>
+                                <div><div class="text-5xl md:text-6xl">💻</div><p class="mt-2 text-lg font-bold">DX化圧力</p></div>
+                            </div>
+                        </div>
+                        <div class="text-center p-6 bg-sky-900/90 rounded-b-xl text-white">
+                            <h3 class="text-2xl font-bold text-sky-200">水面下の本当の課題</h3>
+                            <p class="mt-4 text-3xl md:text-4xl font-black text-white leading-tight">利益を蝕む<br>「見えないコスト」</p>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-white p-4 rounded-2xl shadow-lg flex items-center">
+                            <div class="w-1/3 h-24 p-2"><div class="chart-container"><canvas id="hiringCostChart"></canvas></div></div>
+                            <div class="w-2/3 pl-4"><h3 class="text-2xl font-black text-[#003f5c]">① 採用と育成コスト</h3><p class="mt-1 text-gray-600">求人、面接、研修...。退職の度に発生する純粋な損失です。</p></div>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl shadow-lg flex items-center">
+                             <div class="w-1/3 h-24 p-2"><div class="chart-container"><canvas id="productivityCostChart"></canvas></div></div>
+                            <div class="w-2/3 pl-4"><h3 class="text-2xl font-black text-[#bc5090]">② 生産性の"ブレ"コスト</h3><p class="mt-1 text-gray-600">熟練度や体調による処理能力の差が、計画の遅延を生みます。</p></div>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl shadow-lg flex items-center">
+                             <div class="w-1/3 h-24 p-2"><div class="chart-container"><canvas id="safetyCostChart"></canvas></div></div>
+                            <div class="w-2/3 pl-4"><h3 class="text-2xl font-black text-[#ff6361]">③ 安全・リスク管理コスト</h3><p class="mt-1 text-gray-600">物損事故や労災リスクは、企業の信頼を揺るがす時限爆弾です。</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">2 / 6</div>
+        </section>
+
+        <!-- Slide 3: The Automation Trap & AutoFork's Answer -->
+        <section class="slide bg-white">
+            <div class="slide-content">
+                <h2 class="text-5xl font-black text-center mb-10">「自動化の罠」と AutoForkだけの答え</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+                    <div class="bg-red-50 p-8 rounded-2xl border-2 border-red-200">
+                        <h3 class="text-3xl font-bold text-red-600 flex items-center"><span class="text-4xl mr-3">⚠️</span>自動化の罠</h3>
+                        <p class="mt-4 text-lg text-gray-700">ただ機械を導入するだけでは、新たな問題が生まれます。<br>「人が機械に合わせる」という、融通の利かない現場になっていませんか？</p>
+                        <ul class="mt-6 space-y-4 text-lg">
+                            <li class="flex items-start"><span class="text-red-500 mr-2 font-bold">×</span>パレットは常に決まった場所に、正確に置かなければならない…</li>
+                            <li class="flex items-start"><span class="text-red-500 mr-2 font-bold">×</span>ルート変更のたびに、外部の業者を呼ぶ必要がある…</li>
+                            <li class="flex items-start"><span class="text-red-500 mr-2 font-bold">×</span>将来の拡張性がなく、システムが陳腐化してしまう…</li>
+                        </ul>
+                    </div>
+                    <div class="bg-sky-50 p-8 rounded-2xl border-2 border-sky-200">
+                        <h3 class="text-3xl font-bold text-sky-600 flex items-center"><span class="text-4xl mr-3">💡</span>AutoForkの答え</h3>
+                        <p class="mt-4 text-lg text-gray-700">真の解決策は、単なる自動化ではありません。<br>「今の現場のやり方に、機械が合わせてくれる」スマートな自動化です。</p>
+                        <ul class="mt-6 space-y-4 text-lg">
+                            <li class="flex items-start"><span class="text-sky-500 mr-2 font-bold">◎</span><strong class="text-sky-700">人が置いた、そのままの場所から。</strong><br>不整列なパレットも自ら認識します。</li>
+                            <li class="flex items-start"><span class="text-sky-500 mr-2 font-bold">◎</span><strong class="text-sky-700">PC不要。現場のあなたが、すぐに。</strong><br>あなた自身の手で柔軟にルートを変更できます。</li>
+                            <li class="flex items-start"><span class="text-sky-500 mr-2 font-bold">◎</span><strong class="text-sky-700">未来の拡張まで、約束します。</strong><br>オープンな連携で、システムが進化し続けます。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">3 / 6</div>
+        </section>
+
+        <!-- Slide 4: True ROI Combined -->
+        <section class="slide bg-white">
+            <div class="slide-content">
+                <h2 class="text-5xl font-black text-center mb-4">真の費用対効果</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 h-[60vh]">
+                    <div class="bg-white p-6 rounded-2xl shadow-lg flex flex-col"><h3 class="text-2xl font-bold text-center">年間総コスト比較</h3><p class="text-center text-gray-500 mt-1 mb-4">「見えないコスト」を加えると、差は歴然です。</p><div class="flex-grow"><div class="chart-container"><canvas id="annualCostChart"></canvas></div></div></div>
+                    <div class="bg-white p-6 rounded-2xl shadow-lg flex flex-col"><h3 class="text-2xl font-bold text-center">累計コスト推移 (6年間)</h3><p class="text-center text-gray-500 mt-1 mb-4">数年で投資を回収し、未来の利益を生み出します。</p><div class="flex-grow"><div class="chart-container"><canvas id="cumulativeCostChart"></canvas></div></div></div>
+                </div>
+                <div class="mt-4 text-center bg-gray-50 p-4 rounded-lg shadow-inner">
+                    <p class="font-bold text-lg">✨ AIで貴社だけのコストを試算</p>
+                    <div class="flex flex-wrap justify-center items-center gap-4 mt-2">
+                        <div><label for="operators">オペレーター人数:</label><input id="operators" type="number" value="1" class="w-20 p-1 border rounded"> 人</div>
+                        <div><label for="salary">平均年収:</label><input id="salary" type="number" value="466" class="w-24 p-1 border rounded"> 万円</div>
+                        <div><label for="autoforkUnits" class="font-bold">AutoFork台数:</label><input id="autoforkUnits" type="number" value="1" class="w-20 p-1 border rounded font-bold"> 台</div>
+                        <button id="simulateBtn" class="bg-gradient-to-r from-[#ff6361] to-[#bc5090] text-white font-bold py-2 px-6 rounded-lg shadow-md hover:shadow-lg transition">AIで試算する ✨</button>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">4 / 6</div>
+        </section>
+
+        <!-- Slide 5: The Solution -->
+        <section class="slide bg-gray-800 text-white">
+            <div class="slide-content text-center">
+                <h2 class="text-6xl font-black">解決策は、AutoForkです。</h2>
+                <p class="mt-6 text-xl text-gray-300 max-w-4xl mx-auto">AutoForkは単なる「人の代替」ではありません。<br>貴社の倉庫を「人に依存し過ぎる体制」から解放し、データに基づいた安定稼働を実現する、新しい経営インフラです。</p>
+                <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="bg-gray-700 p-8 rounded-xl"><div class="text-5xl">🔄</div><h3 class="text-2xl font-bold mt-4">事業の継続性</h3><p class="text-gray-400 mt-2">長時間、計画通りに安定稼働。不測の事態でも物流を止めません。</p></div>
+                    <div class="bg-gray-700 p-8 rounded-xl"><div class="text-5xl">📊</div><h3 class="text-2xl font-bold mt-4">データ経営の実現</h3><p class="text-gray-400 mt-2">全ての稼働データを蓄積・分析し、サプライチェーン全体の最適化に貢献します。</p></div>
+                    <div class="bg-gray-700 p-8 rounded-xl"><div class="text-5xl">📈</div><h3 class="text-2xl font-bold mt-4">企業価値の向上</h3><p class="text-gray-400 mt-2">人に依存しない体制は、投資家から高く評価され、未来の成長を加速させます。</p></div>
+                </div>
+            </div>
+            <div class="slide-number">5 / 6</div>
+        </section>
+
+        <!-- Slide 6: Call to Action -->
+        <section class="slide bg-white">
+            <div class="slide-content text-center">
+                <h2 class="text-5xl md:text-6xl font-black text-gray-800">国際物流展で、<br>未来の倉庫を。</h2>
+                <p class="mt-6 text-xl md:text-2xl text-gray-600">3台連携デモで「人に依存しない」未来のオペレーションをご体感ください。</p>
+                <div class="mt-10 text-center bg-gray-50 p-4 rounded-lg shadow-inner max-w-2xl mx-auto">
+                    <p class="font-bold text-lg">✨ AIで貴社の未来を予測</p>
+                    <div class="flex justify-center items-center gap-4 mt-2">
+                        <div><label for="industry">貴社の業種:</label><input id="industry" type="text" placeholder="例：食品卸売業" class="w-48 p-1 border rounded"></div>
+                        <button id="visionBtn" class="bg-gradient-to-r from-[#58508d] to-[#003f5c] text-white font-bold py-2 px-6 rounded-lg shadow-md hover:shadow-lg transition">未来を予測する ✨</button>
+                    </div>
+                </div>
+                <p class="mt-12 text-2xl text-gray-500 font-bold">株式会社ハクオウロボティクス</p>
+            </div>
+            <div class="slide-number">6 / 6</div>
+        </section>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <div id="modal-header" class="flex justify-between items-center mb-4">
+                <h3 id="modal-title" class="text-2xl font-bold"></h3>
+                <button id="closeModalBtn" class="text-gray-500 hover:text-gray-800">&times;</button>
+            </div>
+            <div id="modal-body"></div>
+            <div id="modal-footer" class="mt-6 text-right"></div>
+        </div>
+    </div>
+
+    <script>
+        let hiringCostChart, productivityCostChart, safetyCostChart, annualCostChart, cumulativeCostChart;
+        
+        const costData = {
+            vehicle: 10000000,
+            setup: 900000,
+            licensePerUnit: 1440000,
+            inspectionPerUnit: 150000,
+            manualForkliftAnnualCost: 526667,
+        };
+        costData.runningPerUnit = costData.licensePerUnit + costData.inspectionPerUnit;
+
+        const tooltipTitleCallback = (tooltipItems) => {
+            const item = tooltipItems[0];
+            let label = item.chart.data.labels[item.dataIndex];
+            if (Array.isArray(label)) { return label.join(' '); }
+            return label;
+        };
+
+        const formatCurrency = (value) => {
+            if (Math.abs(value) >= 10000) { return Math.round(value / 10000) + '万円'; }
+            return value.toLocaleString() + '円';
+        };
+
+        const chartColors = {
+            color1: '#003f5c', color2: '#58508d', color3: '#bc5090',
+            color4: '#ff6361', color5: '#ffa600',
+        };
+
+        Chart.register(ChartDataLabels);
+
+        const createDonutChart = (ctx, label, data, color) => {
+            return new Chart(ctx, {
+                type: 'doughnut', data: { labels: [label, ''], datasets: [{ data: data, backgroundColor: [color, '#e5e7eb'], borderColor: '#ffffff', borderWidth: 2, }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { display: false }, tooltip: { callbacks: { title: tooltipTitleCallback, label: (context) => `${context.label}: ${formatCurrency(context.raw)}` } }, datalabels: { display: false } } }
+            });
+        };
+
+        const createAnnualCostChart = (ctx, conventionalDirect, conventionalInvisible, autoforkAverage) => {
+            return new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['従来の方法', 'AutoFork (6年平均)'],
+                    datasets: [
+                        { label: '直接コスト', data: [conventionalDirect, 0], backgroundColor: chartColors.color2 },
+                        { label: '見えないコスト', data: [conventionalInvisible, 0], backgroundColor: chartColors.color4 },
+                        { label: 'AutoFork コスト', data: [0, autoforkAverage], backgroundColor: chartColors.color5 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { x: { stacked: true }, y: { stacked: true, ticks: { callback: (value) => formatCurrency(value) } } },
+                    plugins: {
+                        tooltip: { callbacks: { title: tooltipTitleCallback, label: (context) => `${context.dataset.label}: ${formatCurrency(context.raw)}` } },
+                        datalabels: {
+                            color: 'white',
+                            font: { weight: 'bold', size: 14 },
+                            formatter: (value) => value > 0 ? formatCurrency(value) : ''
+                        }
+                    }
+                }
+            });
+        };
+
+        const createCumulativeCostChart = (ctx, conventionalTotal, autoforkUnits) => {
+            const conventionalCosts = Array.from({length: 6}, (_, i) => conventionalTotal * (i + 1));
+            
+            const autoforkInitial = (costData.vehicle * autoforkUnits) + costData.setup;
+            const autoforkRunning = costData.runningPerUnit * autoforkUnits;
+            const autoforkCosts = Array.from({length: 6}, (_, i) => autoforkInitial + (autoforkRunning * (i + 1)));
+            
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['1年目', '2年目', '3年目', '4年目', '5年目', '6年目'],
+                    datasets: [
+                        { label: '従来の方法 (総コスト)', data: conventionalCosts, borderColor: chartColors.color4, backgroundColor: chartColors.color4 + '33', fill: true, tension: 0.1 },
+                        { label: 'AutoFork (累計コスト)', data: autoforkCosts, borderColor: chartColors.color1, backgroundColor: chartColors.color1 + '33', fill: true, tension: 0.1 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            right: 30 
+                        }
+                    },
+                    scales: { y: { ticks: { callback: (value) => formatCurrency(value) } } },
+                    plugins: {
+                        tooltip: { callbacks: { title: tooltipTitleCallback, label: (context) => `${context.dataset.label}: ${formatCurrency(context.raw)}` } },
+                        datalabels: {
+                            align: 'top',
+                            anchor: 'end',
+                            offset: 4,
+                            color: (context) => context.dataset.borderColor,
+                            font: { weight: 'bold', size: 11 },
+                            formatter: (value, context) => context.dataIndex === context.chart.data.labels.length - 1 ? formatCurrency(value) : ''
+                        }
+                    }
+                }
+            });
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            hiringCostChart = createDonutChart(document.getElementById('hiringCostChart')?.getContext('2d'), '採用・育成コスト', [700000, 4663680], chartColors.color1);
+            productivityCostChart = createDonutChart(document.getElementById('productivityCostChart')?.getContext('2d'), '生産性ブレコスト', [470000, 4663680], chartColors.color3);
+            safetyCostChart = createDonutChart(document.getElementById('safetyCostChart')?.getContext('2d'), '安全・リスクコスト', [230000, 4663680], chartColors.color4);
+            
+            const initialConventionalDirect = 4663680 + costData.manualForkliftAnnualCost;
+            const initialConventionalInvisible = 700000 + 470000 + 230000;
+            const initialAutoforkInitial = costData.vehicle + costData.setup;
+            const initialAutoforkRunning = costData.runningPerUnit;
+            const initialAutofork6YearTotal = initialAutoforkInitial + (initialAutoforkRunning * 6);
+            const initialAutoforkAverage = initialAutofork6YearTotal / 6;
+
+            annualCostChart = createAnnualCostChart(document.getElementById('annualCostChart')?.getContext('2d'), initialConventionalDirect, initialConventionalInvisible, initialAutoforkAverage);
+            cumulativeCostChart = createCumulativeCostChart(document.getElementById('cumulativeCostChart')?.getContext('2d'), initialConventionalDirect + initialConventionalInvisible, 1);
+        });
+
+        const modal = document.getElementById('modal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+
+        const showModal = (title, content) => {
+            modalTitle.innerText = title;
+            modalBody.innerHTML = content;
+            modal.classList.remove('hidden');
+        };
+        const hideModal = () => modal.classList.add('hidden');
+        closeModalBtn.addEventListener('click', hideModal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
+
+        const callApiEndpoint = async (endpoint, body) => {
+             showModal("AI処理中...", '<div class="flex justify-center items-center"><div class="loader"></div></div>');
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: "サーバーからの応答が不正です。" }));
+                    throw new Error(errorData.error || `サーバーエラー (ステータス: ${response.status})`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error("API call failed:", error);
+                showModal("エラー", `<p>${error.message}</p>`);
+                return null;
+            }
+        };
+
+        const simulateBtn = document.getElementById('simulateBtn');
+        simulateBtn.addEventListener('click', async () => {
+            const operators = document.getElementById('operators').value;
+            const salary = document.getElementById('salary').value * 10000;
+            const autoforkUnits = document.getElementById('autoforkUnits').value;
+            
+            if (!operators || !salary || !autoforkUnits || operators <= 0 || salary <= 0 || autoforkUnits <= 0) {
+                showModal("入力エラー", "<p>有効な数値を入力してください。</p>");
+                return;
+            }
+
+            const result = await callApiEndpoint('/api/simulate', { operators, salary });
+
+            if (result) {
+                const salaryCost = salary * operators;
+                const manualForkliftCost = costData.manualForkliftAnnualCost * operators;
+                const directCost = salaryCost + manualForkliftCost;
+                const invisibleCost = result.hiringCost + result.productivityLoss + result.safetyRiskCost;
+                const totalConventionalCost = directCost + invisibleCost;
+
+                const autoforkInitial = (costData.vehicle * autoforkUnits) + costData.setup;
+                const autoforkRunning = costData.runningPerUnit * autoforkUnits;
+                const autofork6YearTotal = autoforkInitial + (autoforkRunning * 6);
+                const autoforkAverage = autofork6YearTotal / 6;
+
+                // Update Donut Charts
+                hiringCostChart.data.datasets[0].data = [result.hiringCost, salaryCost];
+                hiringCostChart.update();
+                productivityCostChart.data.datasets[0].data = [result.productivityLoss, salaryCost];
+                productivityCostChart.update();
+                safetyCostChart.data.datasets[0].data = [result.safetyRiskCost, salaryCost];
+                safetyCostChart.update();
+
+                // Update Bar and Line Charts
+                annualCostChart.data.datasets[0].data[0] = directCost;
+                annualCostChart.data.datasets[1].data[0] = invisibleCost;
+                annualCostChart.data.datasets[2].data[1] = autoforkAverage;
+                annualCostChart.update();
+
+                const newConventionalCosts = Array.from({length: 6}, (_, i) => totalConventionalCost * (i + 1));
+                const newAutoforkCosts = Array.from({length: 6}, (_, i) => autoforkInitial + (autoforkRunning * (i + 1)));
+                cumulativeCostChart.data.datasets[0].data = newConventionalCosts;
+                cumulativeCostChart.data.datasets[1].data = newAutoforkCosts;
+                cumulativeCostChart.update();
+                
+                const companyName = "貴社";
+                const modalContent = `
+                    <p class="mb-4">オペレーター${operators}名、平均年収${formatCurrency(salary)}、AutoFork ${autoforkUnits}台の場合のAIによる試算結果です。</p>
+                    <ul class="list-disc pl-5 space-y-2">
+                        <li><strong>従来体制の年間総コスト（概算）:</strong> <span class="font-bold">${formatCurrency(totalConventionalCost)}</span></li>
+                        <li><strong>AutoForkの6年平均コスト:</strong> <span class="font-bold">${formatCurrency(autoforkAverage)}</span></li>
+                    </ul>
+                    <p class="mt-4 text-sm text-gray-600">※すべてのグラフを更新しました。</p>
+                `;
+                showModal(`✨ AIによるコスト分析結果`, modalContent);
+            }
+        });
+
+        const visionBtn = document.getElementById('visionBtn');
+        visionBtn.addEventListener('click', async () => {
+            const industry = document.getElementById('industry').value;
+            if (!industry) {
+                showModal("入力エラー", "<p>業種を入力してください。</p>");
+                return;
+            }
+            
+            const result = await callApiEndpoint('/api/vision', { industry });
+
+            if (result && result.vision) {
+                const modalContent = `<p class="text-lg leading-relaxed">${result.vision.replace(/\n/g, '<br>')}</p>`;
+                showModal(`✨ ${industry}の5年後の倉庫ビジョン`, modalContent);
+            }
+        });
+    </script>
+</body>
+</html>
+
